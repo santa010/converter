@@ -1,5 +1,7 @@
 package cuk.anze.converter.screens.conversion
 
+import android.text.Editable
+import android.text.TextWatcher
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -13,9 +15,10 @@ import com.bumptech.glide.request.RequestOptions
 import cuk.anze.converter.R
 import cuk.anze.converter.model.CurrencyInfo
 import kotlinx.android.synthetic.main.conversion_row.view.*
+import java.lang.Double.parseDouble
 
 
-class ConversionAdapter: RecyclerView.Adapter<ConversionAdapter.ConversionRowHolder>() {
+class ConversionAdapter(private val presenter: ConverterContract.Presenter): RecyclerView.Adapter<ConversionAdapter.ConversionRowHolder>() {
 
     enum class Payload {
         BASE_VALUE
@@ -24,6 +27,7 @@ class ConversionAdapter: RecyclerView.Adapter<ConversionAdapter.ConversionRowHol
     private val data = mutableListOf<CurrencyInfo>()
     private var tickerIndexMap = mutableMapOf<String, Int>()
     var manager: RecyclerView.LayoutManager? = null
+    private lateinit var recyclerView: RecyclerView
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConversionRowHolder {
         return ConversionRowHolder(LayoutInflater.from(parent.context).inflate(R.layout.conversion_row, parent, false))
@@ -42,7 +46,7 @@ class ConversionAdapter: RecyclerView.Adapter<ConversionAdapter.ConversionRowHol
             .into(holder.ivCurrencyImage)
         holder.tvCurrencyTicker.text = rowData.ticker
         holder.tvCurrencyFullName.text = rowData.fullName
-        holder.etCurrencyValue.setText(rowData.baseValue.toString())
+        holder.etCurrencyValue.setText("%.2f".format(data[position].baseValue))
     }
 
     override fun onBindViewHolder(holder: ConversionRowHolder, position: Int, payloads: MutableList<Any>) {
@@ -51,11 +55,15 @@ class ConversionAdapter: RecyclerView.Adapter<ConversionAdapter.ConversionRowHol
         }
         if (payloads.isNotEmpty()) {
             when (payloads[0]) {
-                Payload.BASE_VALUE -> holder.etCurrencyValue.setText(data[position].baseValue.toString())
+                Payload.BASE_VALUE -> holder.etCurrencyValue.setText("%.2f".format(data[position].baseValue))
             }
         } else {
             super.onBindViewHolder(holder, position, payloads)
         }
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        this.recyclerView = recyclerView
     }
 
     fun setData(dataList: List<CurrencyInfo>) {
@@ -82,8 +90,10 @@ class ConversionAdapter: RecyclerView.Adapter<ConversionAdapter.ConversionRowHol
         currencyInfoList.forEach { currencyInfo ->
             val index = tickerIndexMap[currencyInfo.ticker]
             if (index != null) {
-                data[index].baseValue = currencyInfo.baseValue
-                notifyItemChanged(index, Payload.BASE_VALUE)
+                if (index != 0) {
+                    data[index].baseValue = currencyInfo.baseValue
+                    notifyItemChanged(index, Payload.BASE_VALUE)
+                }
             } else {
                 data.add(currencyInfo)
                 tickerIndexMap[currencyInfo.ticker] = data.size - 1
@@ -109,7 +119,40 @@ class ConversionAdapter: RecyclerView.Adapter<ConversionAdapter.ConversionRowHol
 
                 return@setOnEditorActionListener false
             }
+
             view.setOnClickListener(this)
+
+            etCurrencyValue.addTextChangedListener(object: TextWatcher {
+                override fun afterTextChanged(s: Editable) {
+                    if (adapterPosition != 0) {
+                        return
+                    }
+                    presenter.resumeUpdates()
+                }
+
+                override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                    if (adapterPosition != 0) {
+                        return
+                    }
+                    presenter.pauseUpdates()
+                }
+
+                override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                    if (adapterPosition != 0) {
+                        return
+                    }
+                    try {
+                        val num = parseDouble(s.toString())
+                        recyclerView.post {
+                            val row = data[adapterPosition]
+                            row.baseValue = num
+                            presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
+                        }
+                    } catch (e: NumberFormatException) {
+
+                    }
+                }
+            })
         }
 
         override fun onClick(v: View?) {
@@ -120,6 +163,7 @@ class ConversionAdapter: RecyclerView.Adapter<ConversionAdapter.ConversionRowHol
                 }
 
                 val row = data[oldPosition]
+                presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
                 data.removeAt(oldPosition)
                 data.add(0, row)
                 tickerIndexMap = data.mapIndexed { index, currencyInfo -> currencyInfo.ticker to index }
