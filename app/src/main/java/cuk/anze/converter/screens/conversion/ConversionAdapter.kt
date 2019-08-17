@@ -1,5 +1,6 @@
 package cuk.anze.converter.screens.conversion
 
+import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
 import androidx.recyclerview.widget.RecyclerView
@@ -7,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -65,27 +67,8 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.recyclerView = recyclerView
     }
-
-    fun setData(dataList: List<CurrencyInfo>) {
-        data.clear()
-        data.addAll(dataList)
-        tickerIndexMap = data.mapIndexed { index, currencyInfo -> currencyInfo.ticker to index }
-            .toMap()
-            .toMutableMap()
-    }
-
-    fun updateCurencyValue(currencyInfo: CurrencyInfo) {
-        val index = tickerIndexMap[currencyInfo.ticker]
-        if (index != null) {
-            data[index].baseValue = currencyInfo.baseValue
-            notifyItemChanged(index, Payload.BASE_VALUE)
-        } else {
-            data.add(currencyInfo)
-            tickerIndexMap[currencyInfo.ticker] = data.size - 1
-        }
-    }
     
-    fun updateCurencyValues(currencyInfoList: List<CurrencyInfo>) {
+    fun updateCurrencyValues(currencyInfoList: List<CurrencyInfo>) {
         val numPreviousSize = data.size
         currencyInfoList.forEach { currencyInfo ->
             val index = tickerIndexMap[currencyInfo.ticker]
@@ -142,7 +125,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
                         return
                     }
                     try {
-                        val num = parseDouble(s.toString())
+                        val num = if (s.isBlank()) 0.00 else parseDouble(s.toString())
                         recyclerView.post {
                             val row = data[adapterPosition]
                             row.baseValue = num
@@ -166,6 +149,10 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
                 presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
                 data.removeAt(oldPosition)
                 data.add(0, row)
+                if (!etCurrencyValue.hasFocus()) {
+                    etCurrencyValue.requestFocus()
+                }
+                etCurrencyValue.showKeyboard()
                 tickerIndexMap = data.mapIndexed { index, currencyInfo -> currencyInfo.ticker to index }
                     .toMap()
                     .toMutableMap()
@@ -175,4 +162,18 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
             }
         }
     }
+}
+
+fun View.showKeyboard() {
+    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    this.requestFocus()
+    imm.showSoftInput(this, 0)
+}
+
+fun View.hideKeyboard(): Boolean {
+    try {
+        val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        return inputMethodManager.hideSoftInputFromWindow(windowToken, 0)
+    } catch (ignored: RuntimeException) { }
+    return false
 }

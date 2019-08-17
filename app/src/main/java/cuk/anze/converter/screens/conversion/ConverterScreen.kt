@@ -59,7 +59,7 @@ class ConverterScreen: AppCompatActivity(), ConverterContract.View {
 
     override fun displayConversionRates(currencyInfoList: List<CurrencyInfo>) {
         if (rv_currencyList.scrollState == RecyclerView.SCROLL_STATE_IDLE) {
-            adapter.updateCurencyValues(currencyInfoList)
+            adapter.updateCurrencyValues(currencyInfoList)
         }
         if (skeleton.isSkeleton()) {
             skeleton.showOriginal()
