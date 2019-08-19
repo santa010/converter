@@ -72,6 +72,7 @@
         android:textSize="20sp"
         android:fontFamily="sans-serif-medium"
         android:textColor="@color/textRegular"
+        android:hint="0"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="21dp"
         app:layout_constraintEnd_toStartOf="@id/guideline_end"/>

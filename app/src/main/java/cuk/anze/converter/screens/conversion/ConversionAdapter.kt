@@ -5,6 +5,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
@@ -48,7 +49,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
             .into(holder.ivCurrencyImage)
         holder.tvCurrencyTicker.text = rowData.ticker
         holder.tvCurrencyFullName.text = rowData.fullName
-        holder.etCurrencyValue.setText("%.2f".format(data[position].baseValue))
+        bindCurrencyValue(holder, data[position].baseValue)
     }
 
     override fun onBindViewHolder(holder: ConversionRowHolder, position: Int, payloads: MutableList<Any>) {
@@ -57,7 +58,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
         }
         if (payloads.isNotEmpty()) {
             when (payloads[0]) {
-                Payload.BASE_VALUE -> holder.etCurrencyValue.setText("%.2f".format(data[position].baseValue))
+                Payload.BASE_VALUE -> bindCurrencyValue(holder, data[position].baseValue)
             }
         } else {
             super.onBindViewHolder(holder, position, payloads)
@@ -86,6 +87,11 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
         if (numPreviousSize < data.size) {
             notifyItemRangeInserted(numPreviousSize, data.size)
         }
+    }
+
+    private fun bindCurrencyValue(holder: ConversionRowHolder, value: Double?) {
+        val text = if (value == null) "" else "%.2f".format(value)
+        holder.etCurrencyValue.setText(text)
     }
 
     inner class ConversionRowHolder(view: View): RecyclerView.ViewHolder(view), View.OnClickListener {
@@ -125,7 +131,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
                         return
                     }
                     try {
-                        val num = if (s.isBlank()) 0.00 else parseDouble(s.toString())
+                        val num = if (s.isBlank()) null else parseDouble(s.toString())
                         recyclerView.post {
                             val row = data[adapterPosition]
                             row.baseValue = num
@@ -136,23 +142,39 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
                     }
                 }
             })
+
+            etCurrencyValue.setOnTouchListener { v, event ->
+                if (MotionEvent.ACTION_UP == event.action) {
+                    moveRowToTop()
+                }
+
+                return@setOnTouchListener false
+            }
         }
 
         override fun onClick(v: View?) {
             v?.let {
-                val oldPosition = adapterPosition
-                if (oldPosition == 0) {
-                    return
-                }
+                moveRowToTop()
 
-                val row = data[oldPosition]
-                presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
-                data.removeAt(oldPosition)
-                data.add(0, row)
                 if (!etCurrencyValue.hasFocus()) {
                     etCurrencyValue.requestFocus()
                 }
                 etCurrencyValue.showKeyboard()
+            }
+        }
+
+        private fun moveRowToTop() {
+            if (adapterPosition == 0) {
+                return
+            }
+
+            recyclerView.post {
+                val oldPosition = adapterPosition
+                val row = data[oldPosition]
+                presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
+                data.removeAt(oldPosition)
+                data.add(0, row)
+
                 tickerIndexMap = data.mapIndexed { index, currencyInfo -> currencyInfo.ticker to index }
                     .toMap()
                     .toMutableMap()

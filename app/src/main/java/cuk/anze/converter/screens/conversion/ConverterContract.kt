@@ -15,9 +15,7 @@ interface ConverterContract {
 
     interface Presenter: BasePresenter<View> {
 
-        fun setBaseCurrency(ticker: String)
-
-        fun calculateCurrencyValuesForBase(baseTicker: String, baseValue: Double)
+        fun calculateCurrencyValuesForBase(baseTicker: String, baseValue: Double?)
 
         fun pauseUpdates()
 
