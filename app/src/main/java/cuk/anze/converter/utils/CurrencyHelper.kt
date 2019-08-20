@@ -4,7 +4,7 @@ class CurrencyHelper {
 
     companion object {
 
-        val currencyNameMap = mapOf(
+        private val currencyNameMap = mapOf(
             "AED" to "United Arab Emirates Dirham",
             "AFN" to "Afghan Afghani",
             "ALL" to "Albanian Lek",

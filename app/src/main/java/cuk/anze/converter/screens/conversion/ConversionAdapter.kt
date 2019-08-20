@@ -1,5 +1,6 @@
 package cuk.anze.converter.screens.conversion
 
+import android.annotation.SuppressLint
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -69,6 +70,18 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
     }
     
     fun updateCurrencyValues(currencyInfoList: List<CurrencyInfo>) {
+        // Check for any removed currencies
+        val positionsRemoved = tickerIndexMap.keys.filter {
+            return@filter !currencyInfoList.contains(CurrencyInfo(it, "", "", null))
+        }.toCollection(ArrayList())
+        positionsRemoved.forEach {
+            val position = tickerIndexMap[it]
+            notifyItemRemoved(position!!)
+            data.removeAt(position)
+            tickerIndexMap.remove(it)
+        }
+
+        // check for updated and added currencies
         val numPreviousSize = data.size
         currencyInfoList.forEach { currencyInfo ->
             val index = tickerIndexMap[currencyInfo.ticker]
@@ -93,6 +106,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
         holder.etCurrencyValue.setText(text)
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     inner class ConversionRowHolder(view: View): RecyclerView.ViewHolder(view), View.OnClickListener {
         val ivCurrencyImage: ImageView = view.iv_currencyImage
         val tvCurrencyTicker: TextView = view.tv_currencyTicker
@@ -100,7 +114,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
         val etCurrencyValue: EditText = view.et_currencyValue
 
         init {
-            etCurrencyValue.setOnEditorActionListener { v, actionId, event ->
+            etCurrencyValue.setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
                     etCurrencyValue.clearFocus()
                 }
@@ -142,7 +156,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
                 }
             })
 
-            etCurrencyValue.setOnTouchListener { v, event ->
+            etCurrencyValue.setOnTouchListener { _, event ->
                 if (MotionEvent.ACTION_UP == event.action) {
                     moveRowToTop()
                 }

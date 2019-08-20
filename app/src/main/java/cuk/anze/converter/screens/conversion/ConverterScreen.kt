@@ -67,12 +67,6 @@ class ConverterScreen: AppCompatActivity(), ConverterContract.View {
     }
 
     override fun displayError(errorMsg: String) {
-        // TODO display error
-    }
-}
 
-fun Double.roundTo(decimalPlaces: Int): Double {
-    val tenToPower = Math.pow(10.0, decimalPlaces.toDouble())
-    val int = (this * tenToPower).toInt()
-    return int.toDouble() / tenToPower
+    }
 }
