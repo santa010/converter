@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.faltenreich.skeletonlayout.Skeleton
 import com.faltenreich.skeletonlayout.applySkeleton
+import com.google.android.material.snackbar.Snackbar
 import cuk.anze.converter.R
 import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
@@ -30,14 +31,7 @@ class ConverterScreen: AppCompatActivity(), ConverterContract.View {
         adapter = ConversionAdapter(presenter)
 
         rv_currencyList.adapter = adapter
-        val lmanager = LinearLayoutManager(
-            this,
-            RecyclerView.VERTICAL,
-            false
-        )
-        lmanager.isSmoothScrollbarEnabled = true
-        rv_currencyList.layoutManager =  lmanager
-        adapter.manager = lmanager
+        rv_currencyList.layoutManager =  LinearLayoutManager(this)
 
         skeleton = rv_currencyList.applySkeleton(R.layout.conversion_row_skeleton, 12)
         skeleton.showShimmer = true
@@ -67,6 +61,6 @@ class ConverterScreen: AppCompatActivity(), ConverterContract.View {
     }
 
     override fun displayError(errorMsg: String) {
-
+        Snackbar.make(root, errorMsg, Snackbar.LENGTH_LONG).show()
     }
 }

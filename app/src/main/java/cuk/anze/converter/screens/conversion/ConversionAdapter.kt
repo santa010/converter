@@ -29,7 +29,6 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
 
     private val data = mutableListOf<CurrencyInfo>()
     private var tickerIndexMap = mutableMapOf<String, Int>()
-    var manager: RecyclerView.LayoutManager? = null
     private lateinit var recyclerView: RecyclerView
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConversionRowHolder {
@@ -71,8 +70,9 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
     
     fun updateCurrencyValues(currencyInfoList: List<CurrencyInfo>) {
         // Check for any removed currencies
-        val positionsRemoved = tickerIndexMap.keys.filter {
-            return@filter !currencyInfoList.contains(CurrencyInfo(it, "", "", null))
+        val positionsRemoved = tickerIndexMap.keys.filter { ticker ->
+            return@filter !currencyInfoList.any { currencyInfo -> currencyInfo.ticker == ticker }
+//            return@filter !currencyInfoList.contains(CurrencyInfo(it, "", "", null))
         }.toCollection(ArrayList())
         positionsRemoved.forEach {
             val position = tickerIndexMap[it]
@@ -192,7 +192,7 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
                     .toMap()
                     .toMutableMap()
                 notifyItemMoved(oldPosition, 0).also {
-                    manager?.scrollToPosition(0)
+                    recyclerView.scrollToPosition(0)
                 }
             }
         }

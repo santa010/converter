@@ -15,10 +15,8 @@ class ConversionPresenter(
 
     private var view: ConverterContract.View? = null
     private lateinit var conversionBaseTicker: String
-    private var actualBaseValue: Double = 1.0
     private var conversionRatesForBase: Map<String, Double>? = null
     private var disposable: Disposable? = null
-
     private var givenBaseValue: Double? = 1.0
     private var givenBaseTicker: String? = null
 
@@ -51,9 +49,10 @@ class ConversionPresenter(
     }
 
     override fun resumeUpdates() {
-        disposable = Observable.interval(0, 1, TimeUnit.SECONDS)
+        disposable = Observable.interval(1, TimeUnit.SECONDS, Schedulers.io())
             .flatMap { conversionService.getLatestConversionRates(conversionBaseTicker.toUpperCase()) }
-            .filter { it.base.equals(conversionBaseTicker, true) }
+            .filter {
+                it.base.equals(conversionBaseTicker, true) }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe { response ->
@@ -85,7 +84,7 @@ class ConversionPresenter(
                         val value = if (actualBaseValue == null) null else it.value * actualBaseValue
                         createCurrencyInfo(it.key, value)
                     }.toCollection(ArrayList())
-                    currencyInfoList.add(createCurrencyInfo(conversionBaseTicker, actualBaseValue))
+                    currencyInfoList.add(0, createCurrencyInfo(conversionBaseTicker, actualBaseValue))
                     currencyInfoList.add(0, createCurrencyInfo(givenBaseTicker, givenBaseValue))
                     view?.displayConversionRates(currencyInfoList)
 
