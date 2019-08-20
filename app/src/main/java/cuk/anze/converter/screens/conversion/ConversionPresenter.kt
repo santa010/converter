@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 class ConversionPresenter(
     private val conversionService: ConversionService
-): ConverterContract.Presenter {
+) : ConverterContract.Presenter {
 
     private var view: ConverterContract.View? = null
     private lateinit var conversionBaseTicker: String
@@ -71,14 +71,13 @@ class ConversionPresenter(
                 if (userBaseTicker.equals(conversionBaseTicker, true)) {
                     // If the provided user currency matches the base currency of our conversion rates map
                     // we can use a normal conversion
-                    val currencyInfoList= oneStepConversionList(
+                    val currencyInfoList = oneStepConversionList(
                         conversionRatesForBase,
                         userBaseTicker,
                         userBaseValue
                     )
                     view.displayConversionRates(currencyInfoList)
-                }
-                else {
+                } else {
                     // If the provided user currency is different from our current base
                     // we have to do a two step conversion
                     conversionRatesForBase[userBaseTicker]?.let { conversionRateForUserBase ->
@@ -100,7 +99,11 @@ class ConversionPresenter(
     /**
      * TODO document
      */
-    private fun oneStepConversionList(conversionRates: Map<String, Double>, userBaseTicker: String, userBaseValue: Double?): List<CurrencyInfo> {
+    private fun oneStepConversionList(
+        conversionRates: Map<String, Double>,
+        userBaseTicker: String,
+        userBaseValue: Double?
+    ): List<CurrencyInfo> {
         val currencyInfoList = conversionRates
             .map {
                 val value = if (userBaseValue == null) null else it.value * userBaseValue
@@ -115,8 +118,14 @@ class ConversionPresenter(
     /**
      * TODO document
      */
-    private fun twoStepConversionList(conversionRates: Map<String, Double>, userBaseTicker: String, userBaseValue: Double?, conversionRateForUserBase: Double, conversionBaseTicker: String): List<CurrencyInfo> {
-        val actualBaseValue = if (userBaseValue == null) null else  userBaseValue / conversionRateForUserBase
+    private fun twoStepConversionList(
+        conversionRates: Map<String, Double>,
+        userBaseTicker: String,
+        userBaseValue: Double?,
+        conversionRateForUserBase: Double,
+        conversionBaseTicker: String
+    ): List<CurrencyInfo> {
+        val actualBaseValue = if (userBaseValue == null) null else userBaseValue / conversionRateForUserBase
         val currencyInfoList = conversionRates.filter {
             !it.key.equals(userBaseTicker, true) && !it.key.equals(conversionBaseTicker, true)
         }.map {

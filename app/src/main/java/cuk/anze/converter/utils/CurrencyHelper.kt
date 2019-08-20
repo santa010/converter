@@ -4,6 +4,7 @@ class CurrencyHelper {
 
     companion object {
 
+        // These values were found here: https://openexchangerates.org/api/currencies.json
         private val currencyNameMap = mapOf(
             "AED" to "United Arab Emirates Dirham",
             "AFN" to "Afghan Afghani",
@@ -178,10 +179,17 @@ class CurrencyHelper {
             "ZWL" to "Zimbabwean Dollar"
         )
 
+        /**
+         * This is a temporary solution since I was not able to find assets / API calls for currency flag images in the
+         * provided task documentation
+         */
         fun getImageUrlForTicker(currencyTicker: String): String {
             return "https://www.xe.com/themes/xe/images/flags/big/${currencyTicker.toLowerCase()}.png"
         }
 
+        /**
+         * This is a temporary solution since I was not able to find currency names in the provided task documentation
+         */
         fun getNameForTicker(currencyTicker: String): String {
             return currencyNameMap[currencyTicker] ?: "not provided"
         }
