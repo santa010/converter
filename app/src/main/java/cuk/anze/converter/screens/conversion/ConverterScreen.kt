@@ -1,6 +1,7 @@
 package cuk.anze.converter.screens.conversion
 
 import android.os.Bundle
+import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +23,9 @@ class ConverterScreen: AppCompatActivity(), ConverterContract.View {
     private lateinit var adapter: ConversionAdapter
     private lateinit var skeleton: Skeleton
 
+    private var baseTicker = "EUR"
+    private var baseValue = 1.0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,14 +45,41 @@ class ConverterScreen: AppCompatActivity(), ConverterContract.View {
         skeleton.showSkeleton()
     }
 
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+
+        savedInstanceState?.let { bundle ->
+            bundle.getString("baseTicker")?.let { baseTicker = it }
+            if (bundle.containsKey("baseValue")) {
+                baseValue = bundle.getDouble("baseValue")
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
-        presenter.onSubscribe(this, "EUR", 1.0)
+        presenter.onSubscribe(this, baseTicker, baseValue)
     }
 
     override fun onPause() {
         presenter.onUnsubscribe()
+
+        adapter.getBaseCurrency()?.let { baseCurrency ->
+            baseTicker = baseCurrency.ticker
+            baseCurrency.baseValue?.let { baseValue = it }
+        }
         super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        super.onSaveInstanceState(outState)
+
+        outState?.let { bundle ->
+            adapter.getBaseCurrency()?.let { baseCurrency ->
+                bundle.putString("baseTicker", baseCurrency.ticker)
+                baseCurrency.baseValue?.let { bundle.putDouble("baseValue", it) }
+            }
+        }
     }
 
     override fun displayConversionRates(currencyInfoList: List<CurrencyInfo>) {

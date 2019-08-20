@@ -102,6 +102,10 @@ class ConversionAdapter(
         }
     }
 
+    fun getBaseCurrency(): CurrencyInfo? {
+        return if (data.size > 0) data[0] else null
+    }
+
     private fun bindCurrencyValue(holder: ConversionRowHolder, value: Double?) {
         val text = if (value == null) "" else "%.2f".format(value)
         holder.etCurrencyValue.setText(text)
