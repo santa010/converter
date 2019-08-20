@@ -21,7 +21,9 @@ import kotlinx.android.synthetic.main.conversion_row.view.*
 import java.lang.Double.parseDouble
 
 
-class ConversionAdapter(private val presenter: ConverterContract.Presenter): RecyclerView.Adapter<ConversionAdapter.ConversionRowHolder>() {
+class ConversionAdapter(
+    private val presenter: ConverterContract.Presenter
+): RecyclerView.Adapter<ConversionAdapter.ConversionRowHolder>() {
 
     enum class Payload {
         BASE_VALUE
@@ -72,7 +74,6 @@ class ConversionAdapter(private val presenter: ConverterContract.Presenter): Rec
         // Check for any removed currencies
         val positionsRemoved = tickerIndexMap.keys.filter { ticker ->
             return@filter !currencyInfoList.any { currencyInfo -> currencyInfo.ticker == ticker }
-//            return@filter !currencyInfoList.contains(CurrencyInfo(it, "", "", null))
         }.toCollection(ArrayList())
         positionsRemoved.forEach {
             val position = tickerIndexMap[it]

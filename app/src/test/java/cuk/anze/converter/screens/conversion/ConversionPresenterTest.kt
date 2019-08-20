@@ -9,7 +9,8 @@ import io.reactivex.android.plugins.RxAndroidPlugins
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.schedulers.TestScheduler
-import junit.framework.Assert.assertEquals
+import junit.framework.TestCase.assertEquals
+
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -20,6 +21,7 @@ class ConversionPresenterTest {
 
     private val testScheduler = TestScheduler()
     private val defaultCurrencyTicker = "EUR"
+    private val defaultUserBaseValue = 1.0
     private val defaultRates = mapOf(
         "AUD" to 1.6092,
         "BGN" to 1.9471,
@@ -55,7 +57,7 @@ class ConversionPresenterTest {
     internal fun shouldGetCurrencyInfoOnSubscribe() {
         val presenter = ConversionPresenter(conversionService)
 
-        presenter.onSubscribe(conversionView, defaultCurrencyTicker)
+        presenter.onSubscribe(conversionView, defaultCurrencyTicker, defaultUserBaseValue)
         testScheduler.advanceTimeBy(1, TimeUnit.SECONDS)
 
         argumentCaptor<List<CurrencyInfo>>().apply {
@@ -70,7 +72,7 @@ class ConversionPresenterTest {
         val presenter = ConversionPresenter(conversionService)
         val userValue = 2.5
 
-        presenter.onSubscribe(conversionView, defaultCurrencyTicker)
+        presenter.onSubscribe(conversionView, defaultCurrencyTicker, defaultUserBaseValue)
         testScheduler.advanceTimeBy(1, TimeUnit.SECONDS)
 
         presenter.calculateCurrencyValuesForBase(defaultCurrencyTicker, userValue)
@@ -87,8 +89,9 @@ class ConversionPresenterTest {
         val presenter = ConversionPresenter(conversionService)
         val userValue = null
 
-        presenter.onSubscribe(conversionView, defaultCurrencyTicker)
+        presenter.onSubscribe(conversionView, defaultCurrencyTicker, defaultUserBaseValue)
         testScheduler.advanceTimeBy(1, TimeUnit.SECONDS)
+
         presenter.calculateCurrencyValuesForBase(defaultCurrencyTicker, userValue)
 
         argumentCaptor<List<CurrencyInfo>>().apply {
@@ -104,7 +107,7 @@ class ConversionPresenterTest {
         val userValue = 3.5
         val ticker = "BRL"
 
-        presenter.onSubscribe(conversionView, defaultCurrencyTicker)
+        presenter.onSubscribe(conversionView, defaultCurrencyTicker, defaultUserBaseValue)
         testScheduler.advanceTimeBy(1, TimeUnit.SECONDS)
 
         presenter.calculateCurrencyValuesForBase(ticker, userValue)
@@ -113,7 +116,6 @@ class ConversionPresenterTest {
             verify(conversionView, times(2)).displayConversionRates(capture())
             verify(conversionView, never()).displayError(any())
 
-            // TODO make default value as parameter in view
             val oldBaseValue = 1.0 * userValue / defaultRates.getValue(ticker)
             assertEquals(7, secondValue.size)
             assertCurrencyInfo(ticker, userValue, secondValue[0])
