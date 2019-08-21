@@ -197,7 +197,9 @@ class CurrencyConversionUtils {
     }
 
     /**
-     * TODO document
+     * Used when the base currency of the conversion map matches the currency which the user is modifying.
+     * Returns a list of [cuk.anze.converter.model.CurrencyInfo] objects, where each currency value is calculated
+     * using the provided currency conversion rates map and the value that the user has entered for the base currency.
      */
     fun oneStepConversion(
         conversionRates: Map<String, Double>,
@@ -216,7 +218,9 @@ class CurrencyConversionUtils {
     }
 
     /**
-     * TODO document
+     * Used when the base currency of the conversion map differs from the on that the user is modifying.
+     * First we need to convert the user currency to the base currency of the conversion map. From then the process is
+     * similar to the one in [oneStepConversion].
      */
     fun twoStepConversion(
         conversionRates: Map<String, Double>,

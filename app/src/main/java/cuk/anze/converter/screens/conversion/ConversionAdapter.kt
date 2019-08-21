@@ -156,7 +156,7 @@ class ConversionAdapter(
                             presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
                         }
                     } catch (e: NumberFormatException) {
-
+                        // empty
                     }
                 }
             })
