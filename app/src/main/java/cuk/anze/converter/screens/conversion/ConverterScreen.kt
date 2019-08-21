@@ -13,7 +13,7 @@ import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
 import kotlinx.android.synthetic.main.screen_converter.*
 
-class ConverterScreen: AppCompatActivity(), ConverterContract.View {
+class ConverterScreen : AppCompatActivity(), ConverterContract.View {
 
     private val conversionService by lazy {
         ConversionService.create()
@@ -35,7 +35,7 @@ class ConverterScreen: AppCompatActivity(), ConverterContract.View {
         adapter = ConversionAdapter(presenter)
 
         rv_currencyList.adapter = adapter
-        rv_currencyList.layoutManager =  LinearLayoutManager(this)
+        rv_currencyList.layoutManager = LinearLayoutManager(this)
 
         skeleton = rv_currencyList.applySkeleton(R.layout.conversion_row_skeleton, 12)
         skeleton.showShimmer = true

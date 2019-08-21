@@ -1,11 +1,17 @@
 package cuk.anze.converter.screens.conversion
 
+import android.content.Context
+import android.net.NetworkInfo
+import com.github.pwittchen.reactivenetwork.library.rx2.Connectivity
+import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
+import cuk.anze.converter.model.ConversionRatesResponse
 import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
 import cuk.anze.converter.utils.CurrencyHelper
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
+import io.reactivex.observers.DisposableObserver
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 
@@ -14,9 +20,13 @@ class ConversionPresenter(
 ) : ConverterContract.Presenter {
 
     private var view: ConverterContract.View? = null
+    private var networkDisposable: Disposable? = null
+    private var apiDisposable: Disposable? = null
+    private var isConnected = false
+
     private lateinit var conversionBaseTicker: String
     private var conversionRatesForBase: Map<String, Double>? = null
-    private var disposable: Disposable? = null
+    private lateinit var requestingTicker: String
     private var userBaseValue: Double? = 1.0
     private var userBaseTicker: String? = null
 
@@ -24,12 +34,15 @@ class ConversionPresenter(
         this.view = view
         conversionBaseTicker = payload[0] as String
         userBaseValue = payload[1] as Double
+        requestingTicker = conversionBaseTicker
 
-        resumeUpdates()
+        startObservingNetwork(view.getApplicationContext())
     }
 
     override fun onUnsubscribe() {
-        pauseUpdates()
+        disposeDisposable(apiDisposable)
+        disposeDisposable(networkDisposable)
+
         view = null
     }
 
@@ -38,31 +51,93 @@ class ConversionPresenter(
         userBaseValue = baseValue
 
         sendDataToView(baseTicker, baseValue)
-        conversionBaseTicker = baseTicker
+        requestingTicker = baseTicker
     }
 
     override fun pauseUpdates() {
+        disposeDisposable(apiDisposable)
+    }
+
+    override fun resumeUpdates() {
+        if (isConnected) {
+            startRequestingApi()
+        }
+    }
+
+    private fun startObservingNetwork(context: Context) {
+        if (isDisposableInUse(networkDisposable)) {
+            return
+        }
+
+        networkDisposable = ReactiveNetwork.observeNetworkConnectivity(context)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeWith(object: DisposableObserver<Connectivity>() {
+                override fun onComplete() {
+                    // empty
+                }
+
+                override fun onNext(connectivity: Connectivity) {
+                    if (connectivity.state() == NetworkInfo.State.CONNECTED) {
+                        isConnected = true
+                        startRequestingApi()
+                    }
+                    else if (connectivity.state() == NetworkInfo.State.DISCONNECTED) {
+                        isConnected = false
+                        pauseUpdates()
+                    }
+                }
+
+                override fun onError(e: Throwable) {
+                    view?.displayError("Could not establish a connection.")
+                }
+            })
+    }
+
+    private fun startRequestingApi() {
+        if (isDisposableInUse(apiDisposable)) {
+            return
+        }
+
+        apiDisposable = Observable.interval(1, TimeUnit.SECONDS, Schedulers.io())
+            .flatMap { conversionService.getLatestConversionRates(requestingTicker.toUpperCase()) }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeWith(object: DisposableObserver<ConversionRatesResponse>() {
+                override fun onComplete() {
+                    // empty
+                }
+
+                override fun onNext(response: ConversionRatesResponse) {
+                    conversionBaseTicker = response.base
+                    conversionRatesForBase = response.rates
+                    val ticker = userBaseTicker?.let { it } ?: conversionBaseTicker
+                    sendDataToView(ticker, userBaseValue)
+                }
+
+                override fun onError(e: Throwable) {
+                    // empty
+                }
+            }
+        )
+    }
+
+    private fun isDisposableInUse(disposable: Disposable?): Boolean {
+        disposable?.let {
+            if (!it.isDisposed) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun disposeDisposable(disposable: Disposable?) {
         disposable?.let {
             if (!it.isDisposed) {
                 it.dispose()
             }
         }
-    }
-
-    override fun resumeUpdates() {
-        disposable = Observable.interval(1, TimeUnit.SECONDS, Schedulers.io())
-            .flatMap { conversionService.getLatestConversionRates(conversionBaseTicker.toUpperCase()) }
-            .filter { it.base.equals(conversionBaseTicker, true) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe { response ->
-                response?.let { conversionRatesResponse ->
-                    conversionRatesForBase = conversionRatesResponse.rates
-                    userBaseTicker?.let { givenBaseTicker ->
-                        sendDataToView(givenBaseTicker, userBaseValue)
-                    } ?: sendDataToView(conversionBaseTicker, userBaseValue)
-                }
-            }
     }
 
     private fun sendDataToView(userBaseTicker: String, userBaseValue: Double?) {

@@ -189,7 +189,6 @@ class ConversionAdapter(
             recyclerView.post {
                 val oldPosition = adapterPosition
                 val row = data[oldPosition]
-                presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
                 data.removeAt(oldPosition)
                 data.add(0, row)
 
@@ -199,6 +198,8 @@ class ConversionAdapter(
                 notifyItemMoved(oldPosition, 0).also {
                     recyclerView.scrollToPosition(0)
                 }
+
+                presenter.calculateCurrencyValuesForBase(row.ticker, row.baseValue)
             }
         }
     }
