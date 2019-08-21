@@ -1,9 +1,8 @@
 package cuk.anze.converter.screens.conversion
 
 import cuk.anze.converter.model.ConversionRatesResponse
-import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
-import cuk.anze.converter.utils.CurrencyHelper
+import cuk.anze.converter.utils.conversion.CurrencyConversionUtils
 import cuk.anze.converter.utils.network.NetworkObserver
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -14,7 +13,8 @@ import java.util.concurrent.TimeUnit
 
 class ConversionPresenter(
     private val conversionService: ConversionService,
-    private val networkObserver: NetworkObserver
+    private val networkObserver: NetworkObserver,
+    private val currencyConversionUtils: CurrencyConversionUtils
 ) : ConverterContract.Presenter {
 
     private var view: ConverterContract.View? = null
@@ -98,7 +98,7 @@ class ConversionPresenter(
                 if (userBaseTicker.equals(conversionRatesResponse.base, true)) {
                     // If the provided user currency matches the base currency of our conversion rates map
                     // we can use a normal conversion
-                    val currencyInfoList = oneStepConversionList(
+                    val currencyInfoList = currencyConversionUtils.oneStepConversion(
                         conversionRatesResponse.rates,
                         userBaseTicker,
                         userBaseValue
@@ -108,7 +108,7 @@ class ConversionPresenter(
                     // If the provided user currency is different from our current base
                     // we have to do a two step conversion
                     conversionRatesResponse.rates[userBaseTicker]?.let { conversionRateForUserBase ->
-                        val currencyInfoList = twoStepConversionList(
+                        val currencyInfoList = currencyConversionUtils.twoStepConversion(
                             conversionRatesResponse.rates,
                             userBaseTicker,
                             userBaseValue,
@@ -121,56 +121,5 @@ class ConversionPresenter(
                 }
             } ?: view.displayError("Something went wrong")
         }
-    }
-
-    /**
-     * TODO document
-     */
-    private fun oneStepConversionList(
-        conversionRates: Map<String, Double>,
-        userBaseTicker: String,
-        userBaseValue: Double?
-    ): List<CurrencyInfo> {
-        val currencyInfoList = conversionRates
-            .map {
-                val value = if (userBaseValue == null) null else it.value * userBaseValue
-                createCurrencyInfo(it.key, value)
-            }
-            .toCollection(ArrayList())
-        currencyInfoList.add(0, createCurrencyInfo(userBaseTicker, userBaseValue))
-
-        return currencyInfoList
-    }
-
-    /**
-     * TODO document
-     */
-    private fun twoStepConversionList(
-        conversionRates: Map<String, Double>,
-        userBaseTicker: String,
-        userBaseValue: Double?,
-        conversionRateForUserBase: Double,
-        conversionBaseTicker: String
-    ): List<CurrencyInfo> {
-        val actualBaseValue = if (userBaseValue == null) null else userBaseValue / conversionRateForUserBase
-        val currencyInfoList = conversionRates.filter {
-            !it.key.equals(userBaseTicker, true) && !it.key.equals(conversionBaseTicker, true)
-        }.map {
-            val value = if (actualBaseValue == null) null else it.value * actualBaseValue
-            createCurrencyInfo(it.key, value)
-        }.toCollection(ArrayList())
-        currencyInfoList.add(0, createCurrencyInfo(conversionBaseTicker, actualBaseValue))
-        currencyInfoList.add(0, createCurrencyInfo(userBaseTicker, userBaseValue))
-
-        return currencyInfoList
-    }
-
-    private fun createCurrencyInfo(ticker: String, value: Double?): CurrencyInfo {
-        return CurrencyInfo(
-            ticker,
-            CurrencyHelper.getImageUrlForTicker(ticker),
-            CurrencyHelper.getNameForTicker(ticker),
-            value
-        )
     }
 }

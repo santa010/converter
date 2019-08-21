@@ -10,6 +10,7 @@ import com.google.android.material.snackbar.Snackbar
 import cuk.anze.converter.R
 import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
+import cuk.anze.converter.utils.conversion.CurrencyConversionUtils
 import cuk.anze.converter.utils.network.SimpleNetworkObserver
 import kotlinx.android.synthetic.main.screen_converter.*
 
@@ -20,6 +21,9 @@ class ConverterScreen : AppCompatActivity(), ConverterContract.View {
     }
     private val networkObserver by lazy {
         SimpleNetworkObserver()
+    }
+    private val currencyConversionUtils by lazy {
+        CurrencyConversionUtils()
     }
 
     private lateinit var presenter: ConverterContract.Presenter
@@ -34,7 +38,7 @@ class ConverterScreen : AppCompatActivity(), ConverterContract.View {
 
         setContentView(R.layout.screen_converter)
 
-        presenter = ConversionPresenter(conversionService, networkObserver)
+        presenter = ConversionPresenter(conversionService, networkObserver, currencyConversionUtils)
         adapter = ConversionAdapter(presenter)
 
         rv_currencyList.adapter = adapter

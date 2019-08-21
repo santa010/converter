@@ -1,9 +1,10 @@
-package cuk.anze.converter.utils
+package cuk.anze.converter.utils.conversion
 
-class CurrencyHelper {
+import cuk.anze.converter.model.CurrencyInfo
+
+class CurrencyConversionUtils {
 
     companion object {
-
         // These values were found here: https://openexchangerates.org/api/currencies.json
         private val currencyNameMap = mapOf(
             "AED" to "United Arab Emirates Dirham",
@@ -178,20 +179,71 @@ class CurrencyHelper {
             "ZMW" to "Zambian Kwacha",
             "ZWL" to "Zimbabwean Dollar"
         )
+    }
 
-        /**
-         * This is a temporary solution since I was not able to find assets / API calls for currency flag images in the
-         * provided task documentation
-         */
-        fun getImageUrlForTicker(currencyTicker: String): String {
-            return "https://www.xe.com/themes/xe/images/flags/big/${currencyTicker.toLowerCase()}.png"
-        }
+    /**
+     * This is a temporary solution since I was not able to find assets / API calls for currency flag images in the
+     * provided task documentation
+     */
+    fun getImageUrlForTicker(currencyTicker: String): String {
+        return "https://www.xe.com/themes/xe/images/flags/big/${currencyTicker.toLowerCase()}.png"
+    }
 
-        /**
-         * This is a temporary solution since I was not able to find currency names in the provided task documentation
-         */
-        fun getNameForTicker(currencyTicker: String): String {
-            return currencyNameMap[currencyTicker] ?: "not provided"
-        }
+    /**
+     * This is a temporary solution since I was not able to find currency names in the provided task documentation
+     */
+    fun getNameForTicker(currencyTicker: String): String {
+        return currencyNameMap[currencyTicker] ?: "not provided"
+    }
+
+    /**
+     * TODO document
+     */
+    fun oneStepConversion(
+        conversionRates: Map<String, Double>,
+        userBaseTicker: String,
+        userBaseValue: Double?
+    ): List<CurrencyInfo> {
+        val currencyInfoList = conversionRates
+            .map {
+                val value = if (userBaseValue == null) null else it.value * userBaseValue
+                createCurrencyInfo(it.key, value)
+            }
+            .toCollection(ArrayList())
+        currencyInfoList.add(0, createCurrencyInfo(userBaseTicker, userBaseValue))
+
+        return currencyInfoList
+    }
+
+    /**
+     * TODO document
+     */
+    fun twoStepConversion(
+        conversionRates: Map<String, Double>,
+        userBaseTicker: String,
+        userBaseValue: Double?,
+        conversionRateForUserBase: Double,
+        conversionBaseTicker: String
+    ): List<CurrencyInfo> {
+        val actualBaseValue = if (userBaseValue == null) null else userBaseValue / conversionRateForUserBase
+        val currencyInfoList = conversionRates.filter {
+            !it.key.equals(userBaseTicker, true) && !it.key.equals(conversionBaseTicker, true)
+        }.map {
+            val value = if (actualBaseValue == null) null else it.value * actualBaseValue
+            createCurrencyInfo(it.key, value)
+        }.toCollection(ArrayList())
+        currencyInfoList.add(0, createCurrencyInfo(conversionBaseTicker, actualBaseValue))
+        currencyInfoList.add(0, createCurrencyInfo(userBaseTicker, userBaseValue))
+
+        return currencyInfoList
+    }
+
+    fun createCurrencyInfo(ticker: String, value: Double?): CurrencyInfo {
+        return CurrencyInfo(
+            ticker,
+            getImageUrlForTicker(ticker),
+            getNameForTicker(ticker),
+            value
+        )
     }
 }

@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.*
 import cuk.anze.converter.model.ConversionRatesResponse
 import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
+import cuk.anze.converter.utils.conversion.CurrencyConversionUtils
 import cuk.anze.converter.utils.network.NetworkObserverMock
 import io.reactivex.Observable
 import io.reactivex.android.plugins.RxAndroidPlugins
@@ -48,6 +49,8 @@ class ConversionPresenterTest {
 
     private lateinit var networkObserver: NetworkObserverMock
 
+    private val currencyConversionUtils = CurrencyConversionUtils()
+
     private lateinit var presenter: ConversionPresenter
 
     @Before
@@ -56,7 +59,11 @@ class ConversionPresenterTest {
         whenever(conversionView.getApplicationContext()).thenReturn(context)
         whenever(defaultRatesResponse.base).thenReturn(defaultCurrencyTicker)
         whenever(defaultRatesResponse.rates).thenReturn(defaultRates)
-        whenever(conversionService.getLatestConversionRates(defaultCurrencyTicker)).thenReturn(Observable.just(defaultRatesResponse))
+        whenever(conversionService.getLatestConversionRates(defaultCurrencyTicker)).thenReturn(
+            Observable.just(
+                defaultRatesResponse
+            )
+        )
 
         RxJavaPlugins.setIoSchedulerHandler { testScheduler }
         RxJavaPlugins.setComputationSchedulerHandler { Schedulers.trampoline() }
@@ -66,7 +73,7 @@ class ConversionPresenterTest {
         networkObserver = NetworkObserverMock()
         networkObserver.pushNetworkState(NetworkInfo.State.CONNECTED)
 
-        presenter = ConversionPresenter(conversionService, networkObserver)
+        presenter = ConversionPresenter(conversionService, networkObserver, currencyConversionUtils)
     }
 
     @Test
