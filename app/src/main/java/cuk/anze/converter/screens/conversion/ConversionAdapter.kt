@@ -134,14 +134,14 @@ class ConversionAdapter(
                     if (adapterPosition != 0) {
                         return
                     }
-                    presenter.resumeUpdates()
+                    presenter.startApiUpdates()
                 }
 
                 override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
                     if (adapterPosition != 0) {
                         return
                     }
-                    presenter.pauseUpdates()
+                    presenter.stopApiUpdates()
                 }
 
                 override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {

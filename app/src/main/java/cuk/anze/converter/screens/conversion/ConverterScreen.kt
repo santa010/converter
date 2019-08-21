@@ -1,7 +1,6 @@
 package cuk.anze.converter.screens.conversion
 
 import android.os.Bundle
-import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -11,12 +10,16 @@ import com.google.android.material.snackbar.Snackbar
 import cuk.anze.converter.R
 import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
+import cuk.anze.converter.utils.network.SimpleNetworkObserver
 import kotlinx.android.synthetic.main.screen_converter.*
 
 class ConverterScreen : AppCompatActivity(), ConverterContract.View {
 
     private val conversionService by lazy {
         ConversionService.create()
+    }
+    private val networkObserver by lazy {
+        SimpleNetworkObserver()
     }
 
     private lateinit var presenter: ConverterContract.Presenter
@@ -31,7 +34,7 @@ class ConverterScreen : AppCompatActivity(), ConverterContract.View {
 
         setContentView(R.layout.screen_converter)
 
-        presenter = ConversionPresenter(conversionService)
+        presenter = ConversionPresenter(conversionService, networkObserver)
         adapter = ConversionAdapter(presenter)
 
         rv_currencyList.adapter = adapter

@@ -1,9 +1,12 @@
 package cuk.anze.converter.screens.conversion
 
+import android.content.Context
+import android.net.NetworkInfo
 import com.nhaarman.mockitokotlin2.*
 import cuk.anze.converter.model.ConversionRatesResponse
 import cuk.anze.converter.model.CurrencyInfo
 import cuk.anze.converter.rest.ConversionService
+import cuk.anze.converter.utils.network.NetworkObserverMock
 import io.reactivex.Observable
 import io.reactivex.android.plugins.RxAndroidPlugins
 import io.reactivex.plugins.RxJavaPlugins
@@ -32,6 +35,9 @@ class ConversionPresenterTest {
     )
 
     @Mock
+    private lateinit var context: Context
+
+    @Mock
     private lateinit var conversionView: ConverterContract.View
 
     @Mock
@@ -40,9 +46,14 @@ class ConversionPresenterTest {
     @Mock
     private lateinit var defaultRatesResponse: ConversionRatesResponse
 
+    private lateinit var networkObserver: NetworkObserverMock
+
+    private lateinit var presenter: ConversionPresenter
+
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
+        whenever(conversionView.getApplicationContext()).thenReturn(context)
         whenever(defaultRatesResponse.base).thenReturn(defaultCurrencyTicker)
         whenever(defaultRatesResponse.rates).thenReturn(defaultRates)
         whenever(conversionService.getLatestConversionRates(defaultCurrencyTicker)).thenReturn(Observable.just(defaultRatesResponse))
@@ -51,12 +62,15 @@ class ConversionPresenterTest {
         RxJavaPlugins.setComputationSchedulerHandler { Schedulers.trampoline() }
         RxJavaPlugins.setNewThreadSchedulerHandler { Schedulers.trampoline() }
         RxAndroidPlugins.setInitMainThreadSchedulerHandler { Schedulers.trampoline() }
+
+        networkObserver = NetworkObserverMock()
+        networkObserver.pushNetworkState(NetworkInfo.State.CONNECTED)
+
+        presenter = ConversionPresenter(conversionService, networkObserver)
     }
 
     @Test
     internal fun shouldGetCurrencyInfoOnSubscribe() {
-        val presenter = ConversionPresenter(conversionService)
-
         presenter.onSubscribe(conversionView, defaultCurrencyTicker, defaultUserBaseValue)
         testScheduler.advanceTimeBy(1, TimeUnit.SECONDS)
 
@@ -69,7 +83,6 @@ class ConversionPresenterTest {
 
     @Test
     fun shouldCalculateRatesBasedOnUserValue() {
-        val presenter = ConversionPresenter(conversionService)
         val userValue = 2.5
 
         presenter.onSubscribe(conversionView, defaultCurrencyTicker, defaultUserBaseValue)
@@ -86,7 +99,6 @@ class ConversionPresenterTest {
 
     @Test
     fun shouldSetNullValuesForGivenNullValue() {
-        val presenter = ConversionPresenter(conversionService)
         val userValue = null
 
         presenter.onSubscribe(conversionView, defaultCurrencyTicker, defaultUserBaseValue)
@@ -103,7 +115,6 @@ class ConversionPresenterTest {
 
     @Test
     fun shouldUseTwoStepConversion() {
-        val presenter = ConversionPresenter(conversionService)
         val userValue = 3.5
         val ticker = "BRL"
 

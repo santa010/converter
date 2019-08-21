@@ -20,8 +20,8 @@ interface ConverterContract {
 
         fun calculateCurrencyValuesForBase(baseTicker: String, baseValue: Double?)
 
-        fun pauseUpdates()
+        fun startApiUpdates()
 
-        fun resumeUpdates()
+        fun stopApiUpdates()
     }
 }
