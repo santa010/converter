@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Converter</string>
+    <string name="screen_title_converter">Rates</string>
 </resources>

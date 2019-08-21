@@ -9,7 +9,7 @@
 
 
     <TextView
-        android:text="Rates"
+        android:text="@string/screen_title_converter"
         android:id="@+id/tv_screenTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
